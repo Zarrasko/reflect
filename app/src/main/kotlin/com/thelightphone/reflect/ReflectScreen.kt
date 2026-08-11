@@ -19,7 +19,6 @@ import com.thelightphone.sdk.SealedLightActivity
 import com.thelightphone.sdk.ui.LightBarButton
 import com.thelightphone.sdk.ui.LightBottomBar
 import com.thelightphone.sdk.ui.LightIcons
-import com.thelightphone.sdk.ui.LightScrollView
 import com.thelightphone.sdk.ui.LightShakeDetector
 import com.thelightphone.sdk.ui.LightText
 import com.thelightphone.sdk.ui.LightTextVariant
@@ -29,7 +28,6 @@ import com.thelightphone.sdk.ui.LightThemeTokens
 import com.thelightphone.sdk.ui.LightTopBar
 import com.thelightphone.sdk.ui.LightTopBarCenter
 import com.thelightphone.sdk.ui.gridUnitsAsDp
-import com.thelightphone.sdk.ui.lightClickable
 
 @InitialScreen
 class ReflectScreen(sealedActivity: SealedLightActivity) :
@@ -53,20 +51,11 @@ class ReflectScreen(sealedActivity: SealedLightActivity) :
                     .fillMaxSize()
                     .background(LightThemeTokens.colors.background),
             ) {
-                when (state.mode) {
-                    ReflectScreenMode.Card -> PromptCardContent(
-                        prompt = state.currentPrompt,
-                        isDailyPrompt = state.isDailyPrompt,
-                        onShuffle = viewModel::shufflePrompt,
-                        onBrowse = viewModel::openPromptList,
-                    )
-
-                    ReflectScreenMode.Browse -> PromptBrowseContent(
-                        selectedId = state.currentPrompt.id,
-                        onSelect = viewModel::selectPrompt,
-                        onBack = viewModel::closePromptList,
-                    )
-                }
+                PromptCardContent(
+                    prompt = state.currentPrompt,
+                    isDailyPrompt = state.isDailyPrompt,
+                    onShuffle = viewModel::shufflePrompt,
+                )
             }
         }
     }
@@ -77,7 +66,6 @@ private fun PromptCardContent(
     prompt: ReflectPrompt,
     isDailyPrompt: Boolean,
     onShuffle: () -> Unit,
-    onBrowse: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         LightTopBar(
@@ -118,53 +106,7 @@ private fun PromptCardContent(
                     onClick = onShuffle,
                     contentDescription = "New prompt",
                 ),
-                LightBarButton.LightIcon(
-                    icon = LightIcons.LIST,
-                    onClick = onBrowse,
-                    contentDescription = "Browse prompts",
-                ),
             ),
         )
-    }
-}
-
-@Composable
-private fun PromptBrowseContent(
-    selectedId: Int,
-    onSelect: (ReflectPrompt) -> Unit,
-    onBack: () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        LightTopBar(
-            leftButton = LightBarButton.LightIcon(
-                icon = LightIcons.BACK,
-                onClick = onBack,
-                contentDescription = "Back",
-            ),
-            center = LightTopBarCenter.Text("All Prompts"),
-            modifier = Modifier.padding(bottom = 0.25f.gridUnitsAsDp()),
-        )
-
-        LightScrollView(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(start = 1f.gridUnitsAsDp()),
-        ) {
-            PromptList.prompts.forEach { prompt ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .lightClickable(onClick = { onSelect(prompt) })
-                        .padding(bottom = 1f.gridUnitsAsDp()),
-                ) {
-                    LightText(
-                        text = prompt.text,
-                        variant = LightTextVariant.Copy,
-                        underline = prompt.id == selectedId,
-                    )
-                }
-            }
-        }
     }
 }
