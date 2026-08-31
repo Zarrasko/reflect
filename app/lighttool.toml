@@ -1,8 +1,9 @@
 [tool]
 id = "com.thelightphone.reflect"
-label = "Reflect"
-versionCode = 4
-versionName = "1.1.0"
+label = "Reflect (Beta)"
+versionCode = 5
+versionName = "1.2.0"
 serverPackage = "com.lightos"
+permissions = ["android.permission.RECORD_AUDIO"]
 # change if you run this on the emulator!
 # serverPackage = "com.thelightphone.sdk.emulator"

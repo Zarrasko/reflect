@@ -57,5 +57,6 @@ kotlin {
 dependencies {
     implementation(project(":sdk:client"))
     implementation(libs.kotlinx.datetime)
+    ksp(libs.androidx.room.compiler)
     testImplementation(libs.kotlin.test)
 }
