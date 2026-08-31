@@ -171,11 +171,7 @@ private fun PromptCardContent(
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
         LightTopBar(
-            leftButton = LightBarButton.LightIcon(
-                icon = LightIcons.ALARM,
-                onClick = onOpenHistory,
-                contentDescription = "History",
-            ),
+            leftButton = LightBarButton.Text(text = "History", onClick = onOpenHistory),
             center = LightTopBarCenter.Text("Reflect"),
             rightButton = LightBarButton.LightIcon(
                 icon = LightIcons.SETTINGS,
