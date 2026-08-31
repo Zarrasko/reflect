@@ -460,8 +460,8 @@ class ReflectViewModel(
     }
 
     private fun applyCategories(categories: Set<PromptCategory>) {
-        val order = PromptList.dailyPromptSet(currentDate, categories)
         val starred = _uiState.value.starredPromptIds
+        val order = PromptList.dailyPromptSet(currentDate, categories, starred)
         shownNonStarredIds = mutableSetOf<Int>().apply {
             val first = order.first()
             if (first.id !in starred) add(first.id)
@@ -489,8 +489,11 @@ class ReflectViewModel(
             ?.takeIf { it.isNotEmpty() }
             ?: PromptCategory.entries.toSet()
 
+        val categoriesChanged = categories != _uiState.value.selectedCategories
+        val starredChanged = starred != _uiState.value.starredPromptIds
+
         _uiState.update { it.copy(showList = showList, starredPromptIds = starred) }
-        if (categories != _uiState.value.selectedCategories) {
+        if (categoriesChanged || starredChanged) {
             applyCategories(categories)
         }
     }

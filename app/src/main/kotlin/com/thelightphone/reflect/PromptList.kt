@@ -1,6 +1,7 @@
 package com.thelightphone.reflect
 
 import kotlinx.datetime.LocalDate
+import kotlin.math.pow
 import kotlin.random.Random
 
 data class ReflectPrompt(
@@ -132,19 +133,62 @@ object PromptList {
         ReflectPrompt(id = index, text = seed.text, category = seed.category)
     }
 
+    /** How much more likely a starred prompt is to land in a day's set, versus an unstarred one. */
+    private const val STARRED_WEIGHT = 12.0
+    private const val NORMAL_WEIGHT = 1.0
+
     /**
      * Deterministic subset of prompts for the day, drawn only from
      * [categories]. Stable across the whole day, changes when the date
      * changes. If fewer than [count] prompts match the selected
      * categories, returns however many are available.
+     *
+     * If any starred prompt falls within [categories]: exactly one starred
+     * prompt is always included (picked at random among them, varying day
+     * to day), and — as a counterweight, so heavy starring doesn't crowd
+     * out everything else — exactly one non-starred prompt is always
+     * included too. The remaining slots use weighted random sampling
+     * (Efraimidis-Spirakis A-Res), so any other starred prompts are far
+     * more likely to fill them, without being guaranteed — a starred
+     * prompt can still be left out of those remaining slots, and can just
+     * as easily reappear on back-to-back days, since each day's draw is
+     * independent. With no starred prompts in [categories], neither
+     * guarantee applies and every slot is drawn uniformly, same as before
+     * starring existed.
      */
     fun dailyPromptSet(
         date: LocalDate,
         categories: Set<PromptCategory>,
+        starredIds: Set<Int> = emptySet(),
         count: Int = DAILY_SET_SIZE,
     ): List<ReflectPrompt> {
         val pool = prompts.filter { it.category in categories }.ifEmpty { prompts }
-        val seed = date.toEpochDays()
-        return pool.shuffled(Random(seed)).take(count)
+        val random = Random(date.toEpochDays())
+        val hasStarredInPool = pool.any { it.id in starredIds }
+
+        val guaranteedStarred = if (hasStarredInPool) {
+            pool.filter { it.id in starredIds }.randomOrNull(random)
+        } else null
+        val afterStarred = if (guaranteedStarred != null) pool - guaranteedStarred else pool
+
+        val guaranteedNonStarred = if (hasStarredInPool) {
+            afterStarred.filter { it.id !in starredIds }.randomOrNull(random)
+        } else null
+        val remainingPool = if (guaranteedNonStarred != null) afterStarred - guaranteedNonStarred else afterStarred
+
+        val guaranteed = listOfNotNull(guaranteedStarred, guaranteedNonStarred)
+        val remainingCount = count - guaranteed.size
+
+        val rest = remainingPool
+            .map { prompt ->
+                val weight = if (prompt.id in starredIds) STARRED_WEIGHT else NORMAL_WEIGHT
+                val key = random.nextDouble().pow(1.0 / weight)
+                prompt to key
+            }
+            .sortedByDescending { it.second }
+            .take(remainingCount)
+            .map { it.first }
+
+        return guaranteed + rest
     }
 }
