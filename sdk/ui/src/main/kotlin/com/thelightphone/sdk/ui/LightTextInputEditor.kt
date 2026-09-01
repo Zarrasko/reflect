@@ -5,11 +5,16 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,9 +100,13 @@ fun LightTextInputEditor(
 /**
  * Full-screen text entry matching LightOS `DisplayWithKeyboardPortrait`
  *
- * - Top bar with back button + title
- * - Remaining space shows underlined heading-style input (top-aligned)
- * - Embedded LP3 keyboard, and [LightBottomBar] below it
+ * - Top bar with back button, title, and a submit ([submitLabel]/[submitIcon])
+ *   button on the right — there's no separate bottom bar, so the keyboard
+ *   sits flush at the bottom and the text area gets the rest of the space
+ * - Underlined copy-style input, scrollable once it overflows: the line
+ *   you're typing stays just above the keyboard as earlier lines scroll
+ *   out of view
+ * - Embedded LP3 keyboard below the input
  */
 @Composable
 fun LightTextInputEditor(
@@ -115,6 +124,20 @@ fun LightTextInputEditor(
     val colors = LightThemeTokens.colors
     val inputStyle = lightInputTextStyle()
     var textLayout by remember { mutableStateOf<TextLayoutResult?>(null) }
+    val scrollState = rememberScrollState()
+    val bringIntoViewRequester = remember { BringIntoViewRequester() }
+
+    // Typewriter-style scrolling: whenever the text (or where the cursor
+    // sits within it) changes, scroll just enough to bring the cursor's
+    // line into view. Since a scrollable only scrolls the minimum distance
+    // needed, this keeps the line you're actively typing right above the
+    // keyboard once the content overflows, without moving anything while
+    // it still fits.
+    LaunchedEffect(state.text.toString(), state.selection) {
+        val layout = textLayout ?: return@LaunchedEffect
+        val cursorPos = state.selection.min.coerceIn(0, layout.layoutInput.text.length)
+        bringIntoViewRequester.bringIntoView(layout.getCursorRect(cursorPos))
+    }
 
     Surface {
         Column(modifier = modifier.fillMaxSize()) {
@@ -128,6 +151,17 @@ fun LightTextInputEditor(
                     null
                 },
                 center = LightTopBarCenter.Text(title),
+                rightButton = when (submitIcon) {
+                    null -> LightBarButton.Text(
+                        text = submitLabel,
+                        onClick = { onSubmit(state.text) },
+                    )
+                    else -> LightBarButton.LightIcon(
+                        icon = submitIcon,
+                        onClick = { onSubmit(state.text) },
+                        contentDescription = submitLabel,
+                    )
+                },
                 modifier = Modifier.padding(bottom = 1f.gridUnitsAsDp()),
             )
 
@@ -136,29 +170,34 @@ fun LightTextInputEditor(
                     .weight(1f)
                     .fillMaxWidth()
                     .padding(horizontal = 2f.gridUnitsAsDp())
-                    .pointerInput(Unit) {
-                        awaitEachGesture {
-                            val down = awaitFirstDown(requireUnconsumed = false)
-                            textLayout?.let { layout ->
-                                state.edit {
-                                    selection =
-                                        TextRange(layout.getOffsetForPosition(down.position))
-                                }
-                            }
-                            drag(down.id) { change ->
+                    .verticalScroll(scrollState),
+                contentAlignment = Alignment.TopStart,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .bringIntoViewRequester(bringIntoViewRequester)
+                        .pointerInput(Unit) {
+                            awaitEachGesture {
+                                val down = awaitFirstDown(requireUnconsumed = false)
                                 textLayout?.let { layout ->
                                     state.edit {
                                         selection =
-                                            TextRange(layout.getOffsetForPosition(change.position))
+                                            TextRange(layout.getOffsetForPosition(down.position))
                                     }
                                 }
-                                change.consume()
+                                drag(down.id) { change ->
+                                    textLayout?.let { layout ->
+                                        state.edit {
+                                            selection =
+                                                TextRange(layout.getOffsetForPosition(change.position))
+                                        }
+                                    }
+                                    change.consume()
+                                }
                             }
-                        }
-                    },
-                contentAlignment = Alignment.TopStart,
-            ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
+                        },
+                ) {
                     BasicText(
                         text = state.text.toString(),
                         style = inputStyle,
@@ -194,22 +233,6 @@ fun LightTextInputEditor(
             }
 
             LightEmbeddedLp3Keyboard(viewModel = viewModel)
-
-            LightBottomBar(
-                items = listOf(
-                    when (submitIcon) {
-                        null -> LightBarButton.Text(
-                            text = submitLabel,
-                            onClick = { onSubmit(state.text) },
-                        )
-                        else -> LightBarButton.LightIcon(
-                            icon = submitIcon,
-                            onClick = { onSubmit(state.text) },
-                            contentDescription = submitLabel,
-                        )
-                    },
-                ),
-            )
         }
     }
 }
@@ -239,8 +262,8 @@ private fun factory(
 @Composable
 private fun lightInputTextStyle(): TextStyle {
     val colors = LightThemeTokens.colors
-    val t = LightThemeTokens.typography
-    return t.heading
+    val bodyStyle = LightThemeTokens.typography.copy
+    return bodyStyle
         .copy(
             color = colors.content,
         )
