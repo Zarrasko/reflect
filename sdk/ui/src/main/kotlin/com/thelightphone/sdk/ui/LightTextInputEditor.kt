@@ -45,9 +45,6 @@ import com.thelightphone.sdk.ui.keyboard.TextInputKeyboardCallback
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-private const val INPUT_UNDERLINE_THICKNESS_PX = 3f
-private const val INPUT_UNDERLINE_GAP_GRID_UNITS = 0.5f
-
 @Composable
 fun LightTextInputEditor(
     title: String,
@@ -207,17 +204,6 @@ fun LightTextInputEditor(
                         overflow = if (singleLine) TextOverflow.StartEllipsis else TextOverflow.Clip,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(
-                        modifier = Modifier.height(
-                            INPUT_UNDERLINE_GAP_GRID_UNITS.gridUnitsAsDp(),
-                        ),
-                    )
-                    Spacer(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(INPUT_UNDERLINE_THICKNESS_PX.designVerticalPxToDp())
-                            .background(colors.content),
-                    )
                 }
                 textLayout?.let { layout ->
                     val cursorPos = state.selection.min.coerceIn(0, layout.layoutInput.text.length)
@@ -262,8 +248,8 @@ private fun factory(
 @Composable
 private fun lightInputTextStyle(): TextStyle {
     val colors = LightThemeTokens.colors
-    val bodyStyle = LightThemeTokens.typography.copy
-    return bodyStyle
+    val paragraphStyle = LightThemeTokens.typography.paragraph
+    return paragraphStyle
         .copy(
             color = colors.content,
         )
