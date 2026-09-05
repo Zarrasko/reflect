@@ -1,10 +1,19 @@
 # Reflect
 
-A daily journaling prompt tool for the Light Phone III, built on the
+A journaling tool for the Light Phone III, built on the
 [Light SDK](https://github.com/lightphone/light-sdk).
 
-Shows a new prompt each day. Tap the shuffle icon (or shake the phone) for a
-different one, or browse the full list from the list icon.
+- A new prompt each day, drawn from a pool of ~90 across categories like
+  gratitude, mindfulness, memories, and anxiety — pick which categories are
+  in play from Settings
+- Tap the shuffle icon (or shake the phone) to cycle through the day's 5
+  prompts; star a prompt to make it much more likely to come up on future
+  days, without ever fully crowding out the rest
+- Write a text note and/or record a voice note for whatever prompt is
+  showing, with as many entries per prompt per day as you want
+- Past entries for the current prompt show up right on the card once
+  you've written any; a history view (top-left) covers every entry, across
+  every prompt
 
 This repo is a standalone extraction of the `examples/reflect` module from
 the official Light SDK repo, along with the minimum SDK pieces
