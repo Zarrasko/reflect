@@ -3,6 +3,13 @@
 A journaling tool for the Light Phone III, built on the
 [Light SDK](https://github.com/lightphone/light-sdk).
 
+<p align="center">
+  <img src="screenshots/card.png" width="200" alt="Today's prompt" />
+  <img src="screenshots/editor_typing.png" width="200" alt="Writing an entry" />
+  <img src="screenshots/prompt_history.png" width="200" alt="Past entries for a prompt" />
+  <img src="screenshots/settings.png" width="200" alt="Settings" />
+</p>
+
 - A new prompt each day, drawn from a pool of ~90 across categories like
   gratitude, mindfulness, memories, and anxiety — pick which categories are
   in play from Settings
